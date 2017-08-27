@@ -31,7 +31,7 @@ namespace retaildata
                         "Orig name|" + file.Name + Environment.NewLine +
                         "Email|" + email + Environment.NewLine +
                         "Content-type|" + file.ContentType);
-                    using (var outputStream = new FileStream(Path.Combine(Workers.UPLOAD_PATH, newFileName), FileMode.Create))
+                    using (var outputStream = new FileStream(Path.Combine(Workers.UPLOAD_PATH, newFileName + ".bin"), FileMode.Create))
                         file.Value.CopyTo(outputStream);
                 }
                 return View["../../views/upload_complete.html", new { OutputFiles = outputFiles }];

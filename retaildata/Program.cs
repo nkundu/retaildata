@@ -12,7 +12,8 @@ namespace retaildata
 
         static void Main(string[] args)
         {
-            var workers = new Workers();
+            var dataManager = new DataManager();
+            var workers = new Workers(dataManager);
             Web.workers = workers;
 
             var config = new HostConfiguration
