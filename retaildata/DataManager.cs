@@ -19,6 +19,7 @@ namespace retaildata
     public class DataManager
     {
         public const string DATA_PATH = "data";
+        public const string ERROR_PATH = "errors";
         public List<SiteConifg> sites;
         PhantomJSDriver driver;
         Random rand = new Random();
@@ -40,6 +41,7 @@ namespace retaildata
                 SearchUrl = "https://www.amazon.com/s?field-keywords="
             });
             Directory.CreateDirectory(DATA_PATH);
+            Directory.CreateDirectory(ERROR_PATH);
         }
 
         public bool HasData(string upc)
@@ -49,7 +51,7 @@ namespace retaildata
 
         private void RandomWait()
         {
-            Thread.Sleep(rand.Next(1000));
+            Thread.Sleep(100 + rand.Next(100));
         }
 
         private PhantomJSDriver GetUrlText(string url)
@@ -92,14 +94,22 @@ namespace retaildata
                     driver.Navigate();
                     RandomWait();
                     results.Add("Price", driver.FindElement(By.Id("priceblock_ourprice")).Text);
-                    results.Add("ASIN", driver.FindElement(By.XPath("//th[contains(text(), 'ASIN')]/parent::tr/td")).Text);
+                    var elementsASIN = driver.FindElements(By.XPath("//th[contains(text(), 'ASIN')]/parent::tr/td"))
+                                                .Concat(driver.FindElements(By.XPath("//*[contains(text(), 'ASIN:')]/parent::li")));
+                    if (elementsASIN.Any())
+                        results.Add("ASIN", elementsASIN.First().Text.Replace("ASIN:", ""));
+                    else
+                    {
+                        // get it from URL
+                        throw new Exception("Cannot find ASIN");
+                    }
                     Directory.CreateDirectory(Path.Combine(DATA_PATH, results["ASIN"]));
                     //Directory.CreateDirectory(Path.Combine(DATA_PATH, results["ASIN"], site.Name));
                     File.WriteAllLines(Path.Combine(DATA_PATH, results["ASIN"], "results.txt"), results.Select(kvp => string.Join("|", kvp.Key, kvp.Value)));
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    File.WriteAllText(Path.Combine(ERROR_PATH, DateTime.Now.ToString("yyyyMMddTHHmmss") + ".html"), driver.PageSource);
                 }
             }
         }
